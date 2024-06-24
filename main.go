@@ -4,8 +4,41 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 )
+
+func parseDateTime(datetimeStr string) (time.Time, error) {
+	if unixTime, err := strconv.ParseInt(datetimeStr, 10, 64); err == nil {
+		return time.Unix(unixTime, 0), nil
+	}
+
+	// List of datetime formats to try
+	formats := []string{
+		time.Layout,
+		time.ANSIC,
+		time.UnixDate,
+		time.RubyDate,
+		time.RFC822,
+		time.RFC822Z,
+		time.RFC850,
+		time.RFC1123,
+		time.RFC1123Z,
+		time.RFC3339,
+		time.RFC3339Nano,
+		time.DateTime,
+	}
+
+	// Try parsing the datetime string using the predefined formats
+	for _, format := range formats {
+		if parsedTime, err := time.Parse(format, datetimeStr); err == nil {
+			return parsedTime, nil
+		}
+	}
+
+	// If none of the formats work, return an error
+	return time.Time{}, fmt.Errorf("unable to parse datetime: %s", datetimeStr)
+}
 
 func main() {
 	// Define flags
@@ -66,7 +99,7 @@ func main() {
 			atime = refInfo.ModTime()
 			mtime = refInfo.ModTime()
 		} else if dTime != "" {
-			parsedTime, err := time.Parse(time.RFC3339, dTime)
+			parsedTime, err := parseDateTime(dTime)
 			if err != nil {
 				fmt.Printf("error parsing time: %v\n", err)
 				os.Exit(1)
